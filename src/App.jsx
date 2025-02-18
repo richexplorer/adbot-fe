@@ -6,7 +6,7 @@ import Onboarding from './pages/Onboarding';
 import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider } from './context/AuthContext';
 
-function App() {
+const App = () => {
   return (
     <AuthProvider>
       <Router>
@@ -33,6 +33,6 @@ function App() {
       </Router>
     </AuthProvider>
   );
-}
+};
 
 export default App;
