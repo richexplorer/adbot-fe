@@ -1,81 +1,220 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
+import { Stage, Layer } from 'react-konva';
 import { motion } from 'framer-motion';
-import { FaImage, FaFont } from 'react-icons/fa';
-import { useNavigate } from 'react-router-dom';
+import { FaImage, FaFont, FaShapes, FaTrash, FaCopy } from 'react-icons/fa';
+import ImageElement from '../editor/ImageElement';
+import TextElement from '../editor/TextElement';
+import ShapeElement from '../editor/ShapeElement';
 
 const CreateAd = () => {
-  const [step, setStep] = useState(1);
-  const [generating, setGenerating] = useState(false);
-  const navigate = useNavigate();
+  const [elements, setElements] = useState([]);
+  const [selectedId, setSelectedId] = useState(null);
+  const stageRef = useRef(null);
 
-  const handleGenerate = () => {
-    setGenerating(true);
-    setTimeout(() => {
-      setGenerating(false);
-      navigate('/dashboard');
-    }, 2000);
+  const handleAddImage = (file) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const element = {
+        id: Date.now(),
+        type: 'image',
+        src: e.target.result,
+        x: 100,
+        y: 100,
+        width: 200,
+        height: 200,
+      };
+      setElements([...elements, element]);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleAddText = () => {
+    const element = {
+      id: Date.now(),
+      type: 'text',
+      text: 'Double click to edit',
+      x: 100,
+      y: 100,
+      fontSize: 24,
+      fill: '#000000',
+      width: 200,
+    };
+    setElements([...elements, element]);
+  };
+
+  const handleAddShape = (shapeType) => {
+    const element = {
+      id: Date.now(),
+      type: 'shape',
+      shapeType,
+      x: 100,
+      y: 100,
+      width: 100,
+      height: 100,
+      fill: '#4299e1',
+    };
+    setElements([...elements, element]);
+  };
+
+  const handleElementChange = (id, newProps) => {
+    setElements(
+      elements.map((el) => (el.id === id ? { ...el, ...newProps } : el))
+    );
+  };
+
+  const handleDelete = () => {
+    if (selectedId) {
+      setElements(elements.filter((el) => el.id !== selectedId));
+      setSelectedId(null);
+    }
+  };
+
+  const handleDuplicate = () => {
+    if (selectedId) {
+      const elementToDuplicate = elements.find((el) => el.id === selectedId);
+      if (elementToDuplicate) {
+        const newElement = {
+          ...elementToDuplicate,
+          id: Date.now(),
+          x: elementToDuplicate.x + 20,
+          y: elementToDuplicate.y + 20,
+        };
+        setElements([...elements, newElement]);
+      }
+    }
   };
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Create New Ad</h1>
+    <div className="flex h-[calc(100vh-2rem)]">
+      {/* Toolbar */}
+      <div className="w-64 bg-white shadow-lg p-4 space-y-4">
+        <h2 className="text-lg font-semibold mb-4">Tools</h2>
+        
+        {/* Add Image */}
+        <div>
+          <label className="flex items-center space-x-2 p-2 hover:bg-blue-50 rounded cursor-pointer">
+            <FaImage className="text-blue-600" />
+            <span>Add Image</span>
+            <input
+              type="file"
+              className="hidden"
+              accept="image/*"
+              onChange={(e) => handleAddImage(e.target.files[0])}
+            />
+          </label>
+        </div>
 
-      <div className="bg-white rounded-lg shadow-lg p-6">
-        {step === 1 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="space-y-6"
-          >
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Upload Images
-              </label>
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-12 text-center">
-                <FaImage className="mx-auto text-4xl text-gray-400 mb-4" />
-                <div className="text-gray-600">
-                  <p className="mb-2">Drag and drop your images here</p>
-                  <p className="text-sm">or</p>
-                  <button className="mt-2 text-blue-600 hover:text-blue-700">
-                    Browse files
-                  </button>
-                </div>
-              </div>
-            </div>
+        {/* Add Text */}
+        <button
+          onClick={handleAddText}
+          className="flex items-center space-x-2 p-2 w-full hover:bg-blue-50 rounded"
+        >
+          <FaFont className="text-blue-600" />
+          <span>Add Text</span>
+        </button>
 
+        {/* Add Shapes */}
+        <div className="space-y-2">
+          <div className="flex items-center space-x-2 p-2">
+            <FaShapes className="text-blue-600" />
+            <span>Shapes</span>
+          </div>
+          <div className="grid grid-cols-2 gap-2 p-2">
             <button
-              onClick={() => setStep(2)}
-              className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700"
+              onClick={() => handleAddShape('rectangle')}
+              className="p-2 border rounded hover:bg-blue-50"
             >
-              Continue
+              Rectangle
             </button>
-          </motion.div>
-        )}
-
-        {step === 2 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="space-y-6"
-          >
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Ad Text
-              </label>
-              <textarea
-                className="w-full h-32 p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Enter your ad copy here..."
-              />
-            </div>
-
             <button
-              onClick={handleGenerate}
-              className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700"
+              onClick={() => handleAddShape('circle')}
+              className="p-2 border rounded hover:bg-blue-50"
             >
-              {generating ? 'Generating...' : 'Generate Ad'}
+              Circle
             </button>
-          </motion.div>
+          </div>
+        </div>
+
+        {/* Element Actions */}
+        {selectedId && (
+          <div className="space-y-2 pt-4 border-t">
+            <button
+              onClick={handleDelete}
+              className="flex items-center space-x-2 p-2 w-full hover:bg-red-50 text-red-600 rounded"
+            >
+              <FaTrash />
+              <span>Delete</span>
+            </button>
+            <button
+              onClick={handleDuplicate}
+              className="flex items-center space-x-2 p-2 w-full hover:bg-blue-50 rounded"
+            >
+              <FaCopy />
+              <span>Duplicate</span>
+            </button>
+          </div>
         )}
+      </div>
+
+      {/* Canvas */}
+      <div className="flex-1 bg-gray-100 p-4">
+        <div className="bg-white shadow-lg rounded-lg overflow-hidden">
+          <Stage
+            ref={stageRef}
+            width={800}
+            height={600}
+            onClick={(e) => {
+              if (e.target === e.target.getStage()) {
+                setSelectedId(null);
+              }
+            }}
+          >
+            <Layer>
+              {elements.map((element) => {
+                if (element.type === 'image') {
+                  return (
+                    <ImageElement
+                      key={element.id}
+                      element={element}
+                      isSelected={element.id === selectedId}
+                      onSelect={() => setSelectedId(element.id)}
+                      onChange={(newProps) =>
+                        handleElementChange(element.id, newProps)
+                      }
+                    />
+                  );
+                }
+                if (element.type === 'text') {
+                  return (
+                    <TextElement
+                      key={element.id}
+                      element={element}
+                      isSelected={element.id === selectedId}
+                      onSelect={() => setSelectedId(element.id)}
+                      onChange={(newProps) =>
+                        handleElementChange(element.id, newProps)
+                      }
+                    />
+                  );
+                }
+                if (element.type === 'shape') {
+                  return (
+                    <ShapeElement
+                      key={element.id}
+                      element={element}
+                      isSelected={element.id === selectedId}
+                      onSelect={() => setSelectedId(element.id)}
+                      onChange={(newProps) =>
+                        handleElementChange(element.id, newProps)
+                      }
+                    />
+                  );
+                }
+                return null;
+              })}
+            </Layer>
+          </Stage>
+        </div>
       </div>
     </div>
   );
